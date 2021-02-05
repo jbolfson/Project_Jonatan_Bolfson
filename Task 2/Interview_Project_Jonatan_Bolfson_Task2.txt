@@ -1,0 +1,46 @@
+
+--Calculo utilization
+
+ALTER TABLE examen.dbo.hours
+ADD utilization float
+
+UPDATE examen.dbo.hours
+SET utilization= ((ClientHrs1-total_working_hours_by_employee-AdminHrs1)/ total_working_hours_by_employee)*100
+
+--calculo client time
+
+ALTER TABLE examen.dbo.hours
+ADD client_time float
+
+UPDATE examen.dbo.hours
+SET client_time= ((ClientHrs1-total_working_hours_by_employee)/total_working_hours_by_employee)*100
+
+--Calculo adm_time
+
+ALTER TABLE examen.dbo.hours
+ADD adm_time float
+
+UPDATE examen.dbo.hours
+SET adm_time= ((AdminHrs1-total_working_hours_by_employee)/total_working_hours_by_employee)*100
+
+--Agrego a la tabla skills la descripcion
+
+select a.*, CASE
+ WHEN a.[Attribute Level]=0 THEN 'Wants_To_Learn'
+    WHEN a.[Attribute Level] between 1 and 2  THEN 'Heavy_Supervision'
+    WHEN a.[Attribute Level] between 3 and 4 THEN 'Light_Supervision'
+    ELSE 'Expert' END as skill_level into examen.dbo.skills_fv
+	from examen.dbo.skills a
+
+--Tabla Final
+select a.User_id,a.title,a.fullname,a.department,a.gender,a.office,a.region,a.Tenure_Yrs,a.Seniority,a.salary,a.currency,a.rating,a.survey_score,
+a.promotion,a.avg_hrs, b.date,b.AdminHrs1,b.AdminHrs2,b.AdminHrs3,b.ClientHrs1,b.ClientHrs2,b.ClientHrs3,b.TargetClientHrs,b.total_working_hours_by_employee,b.utilization, b.client_time,b.adm_time,
+ c.[Attribute Group],c.[Attribute Level],c.[Attribute Name],
+c.[Attribute Sub-Group],c.[Attribute Type],c.[Attribute Verified] , c.skill_level 
+into examen.dbo.final_data_fv_2 from examen.dbo.employee_roster_data_usd a left join
+examen.dbo.hours b on a.User_ID=b.UserId left join examen.dbo.skills_fv c on b.UserId=c.Userid 
+
+
+--Number of emails
+
+select from_id, to_id, count(from_id) as number_of_emails_sent into examen.dbo.Email_data_fv from examen.dbo.Email_data group by from_id, to_id
